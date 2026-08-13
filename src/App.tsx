@@ -1,7 +1,6 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./components/layout/Layout";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
-import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
 import Purchasing from "./pages/Purchasing";
@@ -16,20 +15,22 @@ import IndustryInsight from "./pages/IndustryInsight";
 import UserManagement from "./pages/UserManagement";
 import SalesOrders from "./pages/SalesOrders";
 import Backup from "./pages/Backup";
+import { useAuthStore } from "./store/useAuthStore";
 
 export default function App() {
+  const { isAuthenticated, login } = useAuthStore();
+
+  // 自动登录，无需登录页面
+  useEffect(() => {
+    if (!isAuthenticated) {
+      login('u1');
+    }
+  }, [isAuthenticated, login]);
+
   return (
     <Router basename={import.meta.env.PROD ? '/fishball-workbench' : '/'}>
       <Routes>
-        {/* 登录页面 - 无需认证 */}
-        <Route path="/login" element={<Login />} />
-
-        {/* 工作台 - 需要认证 */}
-        <Route path="/" element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }>
+        <Route path="/" element={<Layout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="orders" element={<Orders />} />
@@ -46,9 +47,7 @@ export default function App() {
           <Route path="sales" element={<SalesOrders />} />
           <Route path="backup" element={<Backup />} />
         </Route>
-
-        {/* 未匹配路由重定向到登录 */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Router>
   );
