@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, ClipboardList, Receipt, ShoppingCart,
-  Factory, Truck, Wallet, Video, Users, Bot, MoreHorizontal,
+  LayoutDashboard, ClipboardList, Receipt, Factory,
+  MoreHorizontal, ShoppingCart, Truck, Wallet, Video, Users, Bot,
   BarChart3, Globe, Shield, Cloud, X
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -36,29 +36,21 @@ export default function MobileBottomNav() {
 
   return (
     <>
-      {/* 更多菜单遮罩 */}
       {moreOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black/40 z-40"
-          onClick={() => setMoreOpen(false)}
-        />
+        <div className="lg:hidden fixed inset-0 bg-black/40 z-40" onClick={() => setMoreOpen(false)} />
       )}
 
-      {/* 更多菜单弹出面板 */}
       <div className={clsx(
-        'lg:hidden fixed bottom-16 left-0 right-0 bg-white/98 backdrop-blur-xl border-t border-warm-200 z-40 transition-all duration-300 rounded-t-2xl shadow-2xl',
+        'lg:hidden fixed bottom-12 left-0 right-0 bg-white/98 backdrop-blur-xl border-t border-warm-200 z-40 transition-all duration-300 rounded-t-2xl shadow-2xl',
         moreOpen ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'
       )}>
-        <div className="flex items-center justify-between px-4 py-3 border-b border-warm-100">
-          <span className="text-sm font-semibold text-gray-700">全部功能</span>
-          <button
-            onClick={() => setMoreOpen(false)}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-warm-100 rounded-lg"
-          >
-            <X className="w-5 h-5" />
+        <div className="flex items-center justify-between px-3 py-2 border-b border-warm-100">
+          <span className="text-[13px] font-semibold text-gray-700">全部功能</span>
+          <button onClick={() => setMoreOpen(false)} className="p-1 text-gray-400 hover:text-gray-600 hover:bg-warm-100 rounded-lg">
+            <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="grid grid-cols-4 gap-3 p-4 pb-6 max-h-64 overflow-y-auto">
+        <div className="grid grid-cols-4 gap-2 p-3 pb-4 max-h-56 overflow-y-auto">
           {moreTabs.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -67,32 +59,21 @@ export default function MobileBottomNav() {
                 key={item.id}
                 onClick={() => { navigate(item.path); setMoreOpen(false); }}
                 className={clsx(
-                  'flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl transition-colors',
-                  isActive
-                    ? 'bg-primary-50 text-primary-600'
-                    : 'text-gray-500 hover:bg-warm-50'
+                  'flex flex-col items-center gap-1 py-2 px-1 rounded-lg transition-colors',
+                  isActive ? 'bg-primary-50 text-primary-600' : 'text-gray-500 hover:bg-warm-50'
                 )}
               >
-                <div className={clsx(
-                  'w-11 h-11 rounded-xl flex items-center justify-center',
-                  isActive ? 'bg-primary-100' : 'bg-warm-100'
-                )}>
-                  <Icon className={clsx('w-5 h-5', isActive && 'text-primary-600')} />
+                <div className={clsx('w-9 h-9 rounded-lg flex items-center justify-center', isActive ? 'bg-primary-100' : 'bg-warm-100')}>
+                  <Icon className="w-4 h-4" />
                 </div>
-                <span className={clsx(
-                  'text-[11px] font-medium',
-                  isActive && 'text-primary-600'
-                )}>
-                  {item.label}
-                </span>
+                <span className="text-[11px] font-medium">{item.label}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* 底部导航栏 */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-md border-t border-warm-200 z-30 flex items-center justify-around px-1 safe-bottom">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-12 bg-white/95 backdrop-blur-md border-t border-warm-200 z-30 flex items-center justify-around safe-bottom">
         {mainTabs.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
@@ -101,37 +82,24 @@ export default function MobileBottomNav() {
               key={item.id}
               onClick={() => navigate(item.path)}
               className={clsx(
-                'flex flex-col items-center justify-center gap-0.5 py-1 rounded-xl transition-colors min-w-0 flex-1',
-                isActive
-                  ? 'text-primary-600'
-                  : 'text-gray-400 active:text-gray-600'
+                'flex flex-col items-center justify-center gap-0.5 flex-1 h-full',
+                isActive ? 'text-primary-600' : 'text-gray-400'
               )}
             >
-              <Icon className={clsx('w-5 h-5', isActive && 'text-primary-500')} />
-              <span className={clsx('text-[10px] font-medium', isActive && 'text-primary-600')}>
-                {item.label}
-              </span>
-              {isActive && (
-                <span className="absolute top-0 w-6 h-0.5 bg-primary-500 rounded-full" />
-              )}
+              <Icon className="w-4 h-4" />
+              <span className="text-[10px] font-medium">{item.label}</span>
             </button>
           );
         })}
-
-        {/* 更多按钮 */}
         <button
           onClick={() => setMoreOpen(!moreOpen)}
           className={clsx(
-            'flex flex-col items-center justify-center gap-0.5 py-1 rounded-xl transition-colors min-w-0 flex-1',
-            isMoreActive || moreOpen
-              ? 'text-primary-600'
-              : 'text-gray-400 active:text-gray-600'
+            'flex flex-col items-center justify-center gap-0.5 flex-1 h-full',
+            isMoreActive || moreOpen ? 'text-primary-600' : 'text-gray-400'
           )}
         >
-          <MoreHorizontal className={clsx('w-5 h-5', (isMoreActive || moreOpen) && 'text-primary-500')} />
-          <span className={clsx('text-[10px] font-medium', (isMoreActive || moreOpen) && 'text-primary-600')}>
-            更多
-          </span>
+          <MoreHorizontal className="w-4 h-4" />
+          <span className="text-[10px] font-medium">更多</span>
         </button>
       </nav>
     </>

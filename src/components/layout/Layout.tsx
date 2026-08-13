@@ -19,16 +19,15 @@ export default function Layout() {
   }, [init, initialized]);
 
   return (
-    <div className="flex h-screen bg-warm-50">
+    <div className="flex h-screen bg-gray-50">
       <Sidebar />
       <div className={clsx(
         'flex-1 flex flex-col min-h-screen transition-all duration-300',
-        'lg:ml-[240px]', // 默认桌面端偏移
-        sidebarCollapsed && 'lg:ml-[72px]', // 桌面端折叠后偏移
-        // 手机端无偏移
+        'lg:ml-[200px]',
+        sidebarCollapsed && 'lg:ml-[60px]',
       )}>
         <TopBar />
-        <main className="flex-1 overflow-auto p-4 lg:p-6 pb-20 lg:pb-6">
+        <main className="flex-1 overflow-auto p-3 lg:p-4 pb-16 lg:pb-4">
           <Outlet />
         </main>
         <MobileBottomNav />
