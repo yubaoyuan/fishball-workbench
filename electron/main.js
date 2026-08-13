@@ -13,7 +13,7 @@ function createWindow() {
     minWidth: 900,
     minHeight: 600,
     title: '渔宝源鱼丸店 · AI工作台',
-    icon: path.join(__dirname, 'public/icon-512.png'),
+    icon: path.join(__dirname, '../public/icon-512.png'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -28,7 +28,9 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    mainWindow.loadFile(path.join(__dirname, 'dist/index.html'));
+    // 生产模式：dist 在 electron 同级目录
+    const distPath = path.join(__dirname, '..', 'dist', 'index.html');
+    mainWindow.loadFile(distPath);
   }
 
   // 外部链接用浏览器打开

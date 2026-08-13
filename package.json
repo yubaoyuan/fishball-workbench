@@ -21,7 +21,7 @@
   },
   "build": {
     "appId": "com.fishball.workbench",
-    "productName": "渔宝源鱼丸店 · AI工作台",
+    "productName": "Fishball Workbench",
     "directories": {
       "output": "release"
     },

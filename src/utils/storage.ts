@@ -1,5 +1,5 @@
 const STORAGE_PREFIX = 'fishball_workbench_';
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
 const VERSION_KEY = `${STORAGE_PREFIX}version`;
 
 // 存储键名
@@ -39,7 +39,17 @@ function setStorageVersion(version: number): void {
 export function initStorage(): void {
   const currentVersion = getStorageVersion();
   if (currentVersion < STORAGE_VERSION) {
-    // 未来可在此处处理版本迁移
+    // 版本升级：清除所有旧数据，让用户从零开始
+    if (currentVersion < 2) {
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key?.startsWith(STORAGE_PREFIX)) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch { /* ignore */ }
+    }
     setStorageVersion(STORAGE_VERSION);
   }
 }

@@ -24,7 +24,7 @@ export default function Login() {
     }
     setStep('code');
     setCountdown(60);
-    setStatus({ type: 'success', message: '验证码已发送（演示码：123456）' });
+    setStatus({ type: 'success', message: '验证码已发送（默认：123456）' });
     const timer = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) { clearInterval(timer); return 0; }
@@ -40,7 +40,7 @@ export default function Login() {
       return;
     }
     if (code !== '123456') {
-      setStatus({ type: 'error', message: '验证码错误，演示码为 123456' });
+      setStatus({ type: 'error', message: '验证码错误，请输入 123456' });
       return;
     }
 
@@ -171,7 +171,7 @@ export default function Login() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   验证码
-                  <span className="text-xs text-gray-400 font-normal ml-2">（演示码：123456）</span>
+                  <span className="text-xs text-gray-400 font-normal ml-2">（默认：123456）</span>
                 </label>
                 <input
                   type="text"
@@ -290,7 +290,7 @@ export default function Login() {
         </div>
 
         <p className="text-xs text-gray-400 text-center mt-4">
-          演示版验证码：123456 · 新用户自动注册，管理员在后台分配权限
+          首次使用？输入手机号即可自动注册 · 管理员在后台分配权限
         </p>
       </div>
     </div>

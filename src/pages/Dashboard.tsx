@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { useDataStore } from '../store/useDataStore';
@@ -14,122 +15,245 @@ import {
   ArrowRight,
   Sparkles,
   TrendingUp,
+  TrendingDown,
   Users,
   Video,
   AlertTriangle,
+  CheckCircle2,
+  Circle,
+  Target,
 } from 'lucide-react';
 import StatCard from '../components/ui/StatCard';
 import Card from '../components/ui/Card';
 import TodoList from '../components/business/TodoList';
 import OrderCard from '../components/business/OrderCard';
-import ContentCard from '../components/business/ContentCard';
+
+// 获取今天的日期字符串
+function today(): string { return new Date().toISOString().split('T')[0]; }
+function daysAgo(n: number): string {
+  const d = new Date(); d.setDate(d.getDate() - n);
+  return d.toISOString().split('T')[0];
+}
+function formatDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-');
+  return `${m}月${d}日`;
+}
+function getWeekday(): string {
+  const days = ['日', '一', '二', '三', '四', '五', '六'];
+  return `星期${days[new Date().getDay()]}`;
+}
 
 const quickActions = [
   { icon: FileText, label: '记订单', color: 'from-primary-400 to-primary-600', path: '/orders' },
   { icon: ShoppingCart, label: '记采购', color: 'from-success-400 to-success-600', path: '/purchasing' },
   { icon: Package, label: '生产记录', color: 'from-warning-400 to-warning-600', path: '/production' },
   { icon: Truck, label: '发快递', color: 'from-blue-400 to-blue-600', path: '/delivery' },
-  { icon: Mic, label: 'AI语音记账', color: 'from-purple-400 to-purple-600', path: '/ai-assistant' },
+  { icon: Mic, label: 'AI语音记账', color: 'from-purple-400 to-purple-600', path: '/ai' },
   { icon: Video, label: '写视频脚本', color: 'from-pink-400 to-pink-600', path: '/content' },
-];
-
-const aiSuggestions = [
-  {
-    type: 'warning',
-    title: '库存预警',
-    content: '淀粉库存不足，建议今天采购30斤',
-    icon: AlertTriangle,
-  },
-  {
-    type: 'tip',
-    title: '客户提醒',
-    content: '赵老师团购客户7天未下单，建议回访',
-    icon: Users,
-  },
-  {
-    type: 'trend',
-    title: '经营建议',
-    content: '虾丸销量本周增长23%，建议明天多生产10斤',
-    icon: TrendingUp,
-  },
 ];
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const currentUser = useAuthStore(s => s.currentUser);
   const orders = useDataStore(s => s.orders);
+  const salesOrders = useDataStore(s => s.salesOrders);
   const financeRecords = useDataStore(s => s.financeRecords);
+  const production = useDataStore(s => s.production);
+  const todos = useDataStore(s => s.todos);
   const contents = useDataStore(s => s.contents);
 
-  const todayIncome = financeRecords
-    .filter(r => r.type === 'income' && r.date === '2026-07-08')
-    .reduce((sum, r) => sum + r.amount, 0);
-  const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'confirmed').length;
-  const shippingOrders = orders.filter(o => o.status === 'shipping' || o.status === 'producing').length;
-  const todayPurchases = financeRecords
-    .filter(r => r.type === 'expense' && r.date === '2026-07-08')
-    .reduce((sum, r) => sum + r.amount, 0);
+  const todayStr = today();
+  const yesterdayStr = daysAgo(1);
+
+  // 今日数据
+  const todayOrders = useMemo(() => salesOrders.filter(o => o.salesDate === todayStr), [salesOrders, todayStr]);
+  const todayInProduction = useMemo(() => orders.filter(o => (o.status === 'pending' || o.status === 'confirmed' || o.status === 'producing')), [orders]);
+  const todayShipping = useMemo(() => orders.filter(o => (o.status === 'shipping')), [orders]);
+  const todayIncome = useMemo(() => financeRecords.filter(r => r.type === 'income' && r.date === todayStr).reduce((s, r) => s + r.amount, 0), [financeRecords, todayStr]);
+  const todayExpense = useMemo(() => financeRecords.filter(r => r.type === 'expense' && r.date === todayStr).reduce((s, r) => s + r.amount, 0), [financeRecords, todayStr]);
+  const todaySalesAmount = useMemo(() => todayOrders.reduce((s, o) => s + o.totalAmount, 0), [todayOrders]);
+  const todayProduction = useMemo(() => production.filter(p => p.date === todayStr).reduce((s, p) => s + p.quantity, 0), [production, todayStr]);
+
+  // 昨日数据（对比）
+  const yesterdayIncome = useMemo(() => financeRecords.filter(r => r.type === 'income' && r.date === yesterdayStr).reduce((s, r) => s + r.amount, 0), [financeRecords, yesterdayStr]);
+  const yesterdayExpense = useMemo(() => financeRecords.filter(r => r.type === 'expense' && r.date === yesterdayStr).reduce((s, r) => s + r.amount, 0), [financeRecords, yesterdayStr]);
+  const yesterdayOrders = useMemo(() => salesOrders.filter(o => o.salesDate === yesterdayStr).length, [salesOrders, yesterdayStr]);
+  const yesterdaySalesAmount = useMemo(() => salesOrders.filter(o => o.salesDate === yesterdayStr).reduce((s, o) => s + o.totalAmount, 0), [salesOrders, yesterdayStr]);
+
+  // 趋势计算
+  const incomeTrend = yesterdayIncome > 0 ? Math.round(((todayIncome - yesterdayIncome) / yesterdayIncome) * 100) : 0;
+  const expenseTrend = yesterdayExpense > 0 ? Math.round(((todayExpense - yesterdayExpense) / yesterdayExpense) * 100) : 0;
+  const orderTrend = yesterdayOrders > 0 ? Math.round(((todayOrders.length - yesterdayOrders) / yesterdayOrders) * 100) : 0;
+
+  // 今日任务
+  const completedTodos = todos.filter(t => t.completed).length;
+  const totalTodos = todos.length;
+  const todoProgress = totalTodos > 0 ? Math.round((completedTodos / totalTodos) * 100) : 0;
 
   const recentOrders = orders.slice(0, 3);
   const recentContents = contents.filter(c => c.status !== 'published').slice(0, 4);
 
+  const aiSuggestions = [
+    {
+      type: 'warning' as const,
+      title: '库存预警',
+      content: todayProduction > 0 ? `今日已生产${todayProduction}斤鱼丸，草鱼库存需补充` : '今日尚未记录生产，请及时更新',
+      icon: AlertTriangle,
+    },
+    {
+      type: 'tip' as const,
+      title: '待办提醒',
+      content: todos.filter(t => !t.completed).length > 0 ? `还有${todos.filter(t => !t.completed).length}项待办未完成` : '今日待办已全部完成！',
+      icon: Users,
+    },
+    {
+      type: 'trend' as const,
+      title: '经营数据',
+      content: todayOrders.length > 0 ? `今日已接${todayOrders.length}单，销售额¥${todaySalesAmount.toLocaleString()}` : '今日暂无销售记录，加油！',
+      icon: TrendingUp,
+    },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 lg:space-y-6">
+      {/* 顶部问候 */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">{currentUser?.displayName || '老板'}好！👋</h1>
-          <p className="text-gray-500 mt-1">今天是 2026年7月8日 星期三，祝您生意兴隆！</p>
+          <h1 className="text-xl lg:text-2xl font-bold text-gray-800">{currentUser?.displayName || '老板'}好！👋</h1>
+          <p className="text-xs lg:text-sm text-gray-500 mt-1">{todayStr} {getWeekday()} · 祝您生意兴隆！</p>
         </div>
         <button
-          onClick={() => navigate('/ai-assistant')}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all"
+          onClick={() => navigate('/ai')}
+          className="hidden lg:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all"
         >
           <Sparkles className="w-5 h-5" />
           AI助手
         </button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 今日进度卡片 */}
+      <Card className="p-4 lg:p-5 bg-gradient-to-r from-primary-50/50 via-white to-white border-primary-100">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+            <Target className="w-5 h-5 text-primary-500" />
+            今日进度
+          </h3>
+          <span className="text-xs text-gray-400">{formatDate(todayStr)}</span>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+          <div className="bg-white rounded-xl p-3 border border-warm-100">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-500">销售单</span>
+              <span className="text-xs text-gray-400">{todayOrders.length}单</span>
+            </div>
+            <div className="text-lg font-bold text-gray-800">¥{todaySalesAmount.toLocaleString()}</div>
+            <div className="flex items-center gap-1 mt-0.5">
+              {orderTrend >= 0 ? (
+                <TrendingUp className="w-3 h-3 text-success-500" />
+              ) : (
+                <TrendingDown className="w-3 h-3 text-danger-500" />
+              )}
+              <span className={`text-xs ${orderTrend >= 0 ? 'text-success-600' : 'text-danger-600'}`}>
+                {orderTrend >= 0 ? '+' : ''}{orderTrend}% 较昨日
+              </span>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-3 border border-warm-100">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-500">今日收入</span>
+              <span className="text-xs text-gray-400">较昨日</span>
+            </div>
+            <div className="text-lg font-bold text-success-600">¥{todayIncome.toLocaleString()}</div>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className={`text-xs ${incomeTrend >= 0 ? 'text-success-600' : 'text-danger-600'}`}>
+                {incomeTrend >= 0 ? '+' : ''}{incomeTrend}%
+              </span>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-3 border border-warm-100">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-500">今日支出</span>
+              <span className="text-xs text-gray-400">较昨日</span>
+            </div>
+            <div className="text-lg font-bold text-danger-600">¥{todayExpense.toLocaleString()}</div>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className={`text-xs ${expenseTrend <= 0 ? 'text-success-600' : 'text-danger-600'}`}>
+                {expenseTrend >= 0 ? '+' : ''}{expenseTrend}%
+              </span>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-3 border border-warm-100">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-500">今日生产</span>
+              <span className="text-xs text-gray-400">{todayProduction}斤</span>
+            </div>
+            <div className="text-lg font-bold text-primary-600">{todayProduction}斤</div>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="text-xs text-gray-500">待处理 {todayInProduction.length} 单</span>
+            </div>
+          </div>
+        </div>
+        {/* 任务进度条 */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-500">今日任务</span>
+              <span className="text-xs font-medium text-primary-600">{completedTodos}/{totalTodos}</span>
+            </div>
+            <div className="w-full h-2 bg-warm-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-primary-400 to-primary-600 rounded-full transition-all duration-500"
+                style={{ width: `${todoProgress}%` }}
+              />
+            </div>
+          </div>
+          <span className="text-xs font-bold text-primary-600">{todoProgress}%</span>
+        </div>
+      </Card>
+
+      {/* 统计卡片 */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         <StatCard
           title="今日营收"
-          value={`¥${todayIncome}`}
-          icon={<Wallet className="w-6 h-6" />}
-          trend={12}
+          value={`¥${todayIncome.toLocaleString()}`}
+          icon={<Wallet className="w-5 lg:w-6 h-5 lg:h-6" />}
+          trend={incomeTrend}
           trendLabel="较昨日"
           color="primary"
         />
         <StatCard
-          title="待处理订单"
-          value={pendingOrders}
-          icon={<ClipboardList className="w-6 h-6" />}
+          title="待处理"
+          value={todayInProduction.length}
+          icon={<ClipboardList className="w-5 lg:w-6 h-5 lg:h-6" />}
           color="warning"
         />
         <StatCard
-          title="配送/生产中"
-          value={shippingOrders}
-          icon={<Truck className="w-6 h-6" />}
+          title="配送中"
+          value={todayShipping.length}
+          icon={<Truck className="w-5 lg:w-6 h-5 lg:h-6" />}
           color="info"
         />
         <StatCard
           title="今日支出"
-          value={`¥${todayPurchases}`}
-          icon={<ShoppingCart className="w-6 h-6" />}
-          trend={-5}
+          value={`¥${todayExpense.toLocaleString()}`}
+          icon={<ShoppingCart className="w-5 lg:w-6 h-5 lg:h-6" />}
+          trend={expenseTrend}
           trendLabel="较昨日"
           color="success"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="col-span-2 space-y-6">
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
+        <div className="col-span-2 space-y-5 lg:space-y-6">
+          {/* 快捷操作 */}
+          <Card className="p-4 lg:p-5">
+            <div className="flex items-center justify-between mb-3 lg:mb-4">
               <h3 className="font-semibold text-gray-800 flex items-center gap-2">
                 <Zap className="w-5 h-5 text-warning-500" />
                 快捷操作
               </h3>
             </div>
-            <div className="grid grid-cols-6 gap-3">
+            <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 lg:gap-3">
               {quickActions.map((action, idx) => {
                 const Icon = action.icon;
                 return (
@@ -138,8 +262,8 @@ export default function Dashboard() {
                     onClick={() => navigate(action.path)}
                     className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-warm-50 transition-all group"
                   >
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-md group-hover:scale-105 transition-transform`}>
-                      <Icon className="w-6 h-6 text-white" />
+                    <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-md group-hover:scale-105 transition-transform`}>
+                      <Icon className="w-5 lg:w-6 h-5 lg:h-6 text-white" />
                     </div>
                     <span className="text-xs text-gray-600 font-medium">{action.label}</span>
                   </button>
@@ -148,14 +272,15 @@ export default function Dashboard() {
             </div>
           </Card>
 
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-4">
+          {/* AI 智能提醒 */}
+          <Card className="p-4 lg:p-5">
+            <div className="flex items-center justify-between mb-3 lg:mb-4">
               <h3 className="font-semibold text-gray-800 flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-primary-500" />
                 AI智能提醒
               </h3>
               <span className="text-xs text-primary-500 flex items-center gap-1">
-                实时更新
+                根据实时数据
                 <span className="w-1.5 h-1.5 bg-primary-500 rounded-full animate-pulse" />
               </span>
             </div>
@@ -186,7 +311,7 @@ export default function Dashboard() {
                       <p className="text-sm font-medium text-gray-800">{suggestion.title}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{suggestion.content}</p>
                     </div>
-                    <button className="text-xs text-primary-500 hover:text-primary-600 font-medium flex items-center gap-1">
+                    <button className="text-xs text-primary-500 hover:text-primary-600 font-medium flex items-center gap-1 whitespace-nowrap">
                       处理 <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>
@@ -195,8 +320,9 @@ export default function Dashboard() {
             </div>
           </Card>
 
+          {/* 最近订单 */}
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3 lg:mb-4">
               <h3 className="font-semibold text-gray-800">最近订单</h3>
               <button
                 onClick={() => navigate('/orders')}
@@ -213,11 +339,13 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="space-y-6">
+        {/* 右侧栏 */}
+        <div className="space-y-5 lg:space-y-6">
           <TodoList />
 
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-4">
+          {/* 待发布内容 */}
+          <Card className="p-4 lg:p-5">
+            <div className="flex items-center justify-between mb-3 lg:mb-4">
               <h3 className="font-semibold text-gray-800 flex items-center gap-2">
                 <Video className="w-5 h-5 text-pink-500" />
                 待发布内容
@@ -229,11 +357,12 @@ export default function Dashboard() {
                 <Plus className="w-4 h-4" />
               </button>
             </div>
-            <div className="space-y-3">
-              {recentContents.map(content => (
+            <div className="space-y-2">
+              {recentContents.length > 0 ? recentContents.map(content => (
                 <div
                   key={content.id}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-warm-50 cursor-pointer transition-colors"
+                  onClick={() => navigate('/content')}
                 >
                   <div
                     className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -246,7 +375,18 @@ export default function Dashboard() {
                     <p className="text-xs text-gray-400">{content.topic}</p>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-6 text-gray-400">
+                  <Video className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">暂无待发布内容</p>
+                  <button
+                    onClick={() => navigate('/content')}
+                    className="text-xs text-primary-500 mt-1 hover:text-primary-600"
+                  >
+                    去创建内容
+                  </button>
+                </div>
+              )}
             </div>
           </Card>
         </div>
